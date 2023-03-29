@@ -1,0 +1,192 @@
+version: "3.4"
+
+services:
+  eureka-server:
+    container_name: eureka-server
+    image: eureka-server
+    build:
+      dockerfile: ./EurekaServer/DockerFile
+    ports:
+      - "8761:8761"
+    networks:
+      sweethomenetwork:
+        aliases:
+          - serviceregistry
+  bmc-gateway:
+    container_name: bmc-gateway
+    image: bmc-gateway
+    build:
+      dockerfile: ./bmc-gateway/DockerFile
+    ports:
+      - "9191:9191"
+    depends_on:
+      - eureka-server
+    networks:
+      sweethomenetwork:
+        aliases:
+          - bmcgateway
+  doctor-service:
+    container_name: doctor-service
+    image: doctor-service
+    build:
+      dockerfile: ./doctor-service/DockerFile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - eureka-server
+      - kafka
+      - zookeeper
+      - bmc-gateway
+      - mongodb
+    networks:
+      sweethomenetwork:
+        aliases:
+          - doctorservice
+  user-service:
+      container_name: user-service
+      image: user-service
+      build:
+        dockerfile: ./user-service/DockerFile
+      ports:
+       - "8083:8083"
+      depends_on:
+       - eureka-server
+       - kafka
+       - zookeeper
+       - bmc-gateway
+       - mongodb
+      networks:
+       sweethomenetwork:
+         aliases:
+           - userservice
+  appointment-service:
+     container_name: appointment-service
+     image: appointment-service
+     build:
+        dockerfile: ./appointment-service/DockerFile
+     ports:
+       - "8084:8084"
+     depends_on:
+       - eureka-server
+       - kafka
+       - zookeeper
+       - bmc-gateway
+       - mongodb
+       - mysql-db
+     networks:
+       sweethomenetwork:
+         aliases:
+           - appointmentservice
+  payment-service:
+   container_name: payment-service
+   image: payment-service
+   build:
+      dockerfile: ./payment-service/DockerFile
+   ports:
+     - "8085:8085"
+   depends_on:
+     - eureka-server
+     - bmc-gateway
+   networks:
+     sweethomenetwork:
+       aliases:
+         - paymentservice
+
+  rating-service:
+     container_name: rating-service
+     image: rating-service
+     build:
+        dockerfile: ./rating-service/DockerFile
+     ports:
+       - "8086:8086"
+     depends_on:
+       - eureka-server
+       - kafka
+       - zookeeper
+       - bmc-gateway
+       - mongodb
+     networks:
+       sweethomenetwork:
+         aliases:
+           - ratingservice
+  notification-service:
+     container_name: notification-service
+     image: notification-service
+     build:
+        dockerfile: ./notification-service/DockerFile
+     ports:
+       - "8087:8087"
+     depends_on:
+       - eureka-server
+       - kafka
+       - zookeeper
+     networks:
+       sweethomenetwork:
+         aliases:
+           - notificationservice
+  kafka:
+    container_name: kafka
+    image: "bitnami/kafka:latest"
+    ports:
+     - "9092:9092"
+    expose:
+     - "9092"
+    environment:
+     - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+     - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+     - ALLOW_PLAINTEXT_LISTENER=yes
+     - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+    depends_on:
+     - zookeeper
+    networks:
+     - sweethomenetwork
+  zookeeper:
+    container_name: zookeeper
+    image: "bitnami/zookeeper:latest"
+    ports:
+     - "2181:2181"
+    expose:
+     - "2181"
+    environment:
+     - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+     - sweethomenetwork
+  mysql-db:
+    container_name: MysqlDb
+    image: "mysql:latest"
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'db'
+      # So you don't have to use root, but you can if you like
+      # You can use whatever password you like
+      MYSQL_PASSWORD: 'password'
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      # <Port exposed> : < MySQL Port running inside container>
+      - '3309:3306'
+    expose:
+      # Opens port 3306 on the container
+      - '3306'
+      # Where our data will be persisted
+    volumes:
+      - my-db:/var/lib/mysql
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    expose:
+      # Opens port 3306 on the container
+      - '27017'
+# Names our volume
+volumes:
+  my-db:
+  mongodb_data:
+    name: mongodb_data
+networks:
+ sweethomenetwork:
+  driver: bridge
