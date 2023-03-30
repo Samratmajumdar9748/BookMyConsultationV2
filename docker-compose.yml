@@ -11,7 +11,7 @@ services:
     networks:
       sweethomenetwork:
         aliases:
-          - serviceregistry
+          - service-registry
   bmc-gateway:
     container_name: bmc-gateway
     image: bmc-gateway
@@ -24,7 +24,7 @@ services:
     networks:
       sweethomenetwork:
         aliases:
-          - bmcgateway
+          - bmc-gateway
   doctor-service:
     container_name: doctor-service
     image: doctor-service
@@ -41,7 +41,7 @@ services:
     networks:
       sweethomenetwork:
         aliases:
-          - doctorservice
+          - doctor-service
   user-service:
       container_name: user-service
       image: user-service
@@ -58,7 +58,7 @@ services:
       networks:
        sweethomenetwork:
          aliases:
-           - userservice
+           - user-service
   appointment-service:
      container_name: appointment-service
      image: appointment-service
@@ -73,10 +73,12 @@ services:
        - bmc-gateway
        - mongodb
        - mysql-db
+     environment:
+       MYSQL_HOST: jdbc:mysql://mysql-db:3306/db
      networks:
        sweethomenetwork:
          aliases:
-           - appointmentservice
+           - appointment-service
   payment-service:
    container_name: payment-service
    image: payment-service
@@ -90,7 +92,7 @@ services:
    networks:
      sweethomenetwork:
        aliases:
-         - paymentservice
+         - payment-service
 
   rating-service:
      container_name: rating-service
@@ -108,7 +110,7 @@ services:
      networks:
        sweethomenetwork:
          aliases:
-           - ratingservice
+           - rating-service
   notification-service:
      container_name: notification-service
      image: notification-service
@@ -123,7 +125,7 @@ services:
      networks:
        sweethomenetwork:
          aliases:
-           - notificationservice
+           - notification-service
   kafka:
     container_name: kafka
     image: "bitnami/kafka:latest"
@@ -152,7 +154,7 @@ services:
     networks:
      - sweethomenetwork
   mysql-db:
-    container_name: MysqlDb
+    container_name: mysql-db
     image: "mysql:latest"
     restart: always
     environment:
@@ -164,13 +166,15 @@ services:
       MYSQL_ROOT_PASSWORD: 'password'
     ports:
       # <Port exposed> : < MySQL Port running inside container>
-      - '3309:3306'
+      - '3306:3306'
     expose:
       # Opens port 3306 on the container
       - '3306'
       # Where our data will be persisted
     volumes:
       - my-db:/var/lib/mysql
+    networks:
+      - sweethomenetwork
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -183,6 +187,8 @@ services:
       # Opens port 3306 on the container
       - '27017'
 # Names our volume
+    networks:
+      - sweethomenetwork
 volumes:
   my-db:
   mongodb_data:
